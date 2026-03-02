@@ -1,0 +1,44 @@
+# Changelog
+
+All notable changes to SAPEED will be documented in this file.
+
+The format is based on Keep a Changelog.
+This project adheres to Semantic Versioning (SemVer).
+
+---
+
+## [1.0.0] - 2026-02-28
+
+### Added
+- Full Streamlit dashboard for evaluation analysis.
+- Student-level dimension scoring.
+- Institutional benchmark calculation (student-weighted mean).
+- 95% confidence interval estimation for benchmarking.
+- Dimension-level classification (Above / Within / Below Institutional Range).
+- Cronbach's alpha per dimension.
+- Stratified alpha (institutional level).
+- Multilevel correlation analysis:
+  - Student pooled
+  - Professor ecological
+  - Within selected professor
+- Ridge regression with K-Fold cross-validation.
+- Regularization curve visualization.
+- Coefficient stability paths.
+- Complete technical documentation (Wiki).
+- Governance and responsible use framework.
+- Internal technical appendix.
+- Synthetic demo dataset support.
+
+### Fixed
+- Initial stable institutional release.
+
+---
+
+## [Unreleased]
+
+### Planned
+- Cluster-robust confidence intervals.
+- GroupKFold for Ridge modeling.
+- Optional Spearman correlation.
+- Leave-one-professor-out institutional benchmark.
+- Bootstrap-based inference.

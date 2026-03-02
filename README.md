@@ -25,6 +25,9 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-stable-success)
 
+[![DOI](https://zenodo.org/badge/1170277309.svg)](https://doi.org/10.5281/zenodo.18838613)
+
+
 
 ---
 
@@ -33,3 +36,14 @@
 ---
 Revisar los Github Wiki para más detalles. [SAPEED — Github Wiki](https://github.com/jaorduz/SAPEEDFESAcUNAM/wiki)
 
+
+
+@software{orduz_sapeed_2026,
+  author       = {Orduz, Javier},
+  title        = {{SAPEED}: Sistema de Análisis Psicométrico y Estructural de Evaluación Docente},
+  year         = 2026,
+  version      = {1.0.0},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.18838614},
+  url          = {https://doi.org/10.5281/zenodo.18838613}
+}
