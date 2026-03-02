@@ -37,7 +37,7 @@
 Revisar los Github Wiki para más detalles. [SAPEED — Github Wiki](https://github.com/jaorduz/SAPEEDFESAcUNAM/wiki)
 
 
-
+```bibtex
 @software{orduz_sapeed_2026,
   author       = {Orduz, Javier},
   title        = {{SAPEED}: Sistema de Análisis Psicométrico y Estructural de Evaluación Docente},
@@ -47,3 +47,4 @@ Revisar los Github Wiki para más detalles. [SAPEED — Github Wiki](https://git
   doi          = {10.5281/zenodo.18838614},
   url          = {https://doi.org/10.5281/zenodo.18838613}
 }
+```
