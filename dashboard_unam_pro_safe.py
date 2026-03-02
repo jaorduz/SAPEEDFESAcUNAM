@@ -19,12 +19,70 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from pathlib import Path
 
+# =========================
+# CONFIGURACIÓN INICIAL
+# =========================
+
+st.set_page_config(page_title="SAPEED", layout="wide")
+
+# =========================
+# AUTENTICACIÓN
+# =========================
+
+def check_password():
+
+    # Verificar que exista el secreto
+    if "APP_PASSWORD" not in st.secrets:
+        st.error("APP_PASSWORD not configured in secrets.")
+        st.stop()
+
+    def password_entered():
+        if st.session_state.get("password", "") == st.secrets["APP_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        st.text_input(
+            "🔐 Contraseña institucional",
+            type="password",
+            key="password",
+            on_change=password_entered
+        )
+        return False
+
+    elif not st.session_state["password_correct"]:
+        st.text_input(
+            "🔐 Contraseña institucional",
+            type="password",
+            key="password",
+            on_change=password_entered
+        )
+        st.error("❌ Contraseña incorrecta")
+        return False
+
+    else:
+        return True
+
+
+if not check_password():
+    st.stop()
+
+# Opcional: botón logout
+if st.button("Cerrar sesión"):
+    st.session_state.clear()
+    st.experimental_rerun()
+
+
+# =============================
+# Use demo data if no files uploaded
+# =============================
+
 mode = st.radio(
     "Mode de datos",
     ["Datos demostrativos", "Suba sus archivos CSV"]
 )
-
-
 
 # =============================
 # Función para cargar datos de demostración (si no se suben archivos)
