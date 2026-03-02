@@ -1,0 +1,40 @@
+# ==========================================
+# SAPEED Configuration File
+# ==========================================
+
+app:
+  name: "SAPEED"
+  version: "1.0.0"
+  institution: "FESAc-UNAM"
+  debug: false
+  deafault_model: demo
+
+instrument:
+  likert_min: 1
+  likert_max: 5
+  item_pattern: "^D(\\d+)Q(\\d+)$"
+  enforce_strict_structure: true
+
+analysis:
+  confidence_level: 0.95
+  cv_folds_default: 5
+  cv_folds_min: 3
+  cv_folds_max: 10
+  min_students_warning: 10
+  min_students_model: 30
+
+ridge:
+  lambda_min: 1e-4
+  lambda_max: 1e4
+  lambda_points: 50
+  random_state: 42
+
+visualization:
+  primary_color: "#003366"
+  secondary_color: "#B38E5D"
+  theme: "light"
+
+security:
+  allow_file_upload: true
+  store_uploaded_files: false
+  anonymize_professor_ids: false
