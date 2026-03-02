@@ -31,7 +31,6 @@ st.set_page_config(page_title="SAPEED", layout="wide")
 
 def check_password():
 
-    # Verificar que exista el secreto
     if "APP_PASSWORD" not in st.secrets:
         st.error("APP_PASSWORD not configured in secrets.")
         st.stop()
@@ -62,17 +61,16 @@ def check_password():
         st.error("❌ Contraseña incorrecta")
         return False
 
-    else:
-        return True
+    return True
 
 
 if not check_password():
     st.stop()
 
-# Opcional: botón logout
 if st.button("Cerrar sesión"):
-    st.session_state.clear()
-    st.experimental_rerun()
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
 
 # =============================
