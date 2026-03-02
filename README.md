@@ -1,4 +1,4 @@
-# SAPEED — Documento Técnico Interno
+# SAPEED - Sistema de Análisi Psicométrico y Estructural de Evaluación Docente
 ### Facultad de Estudios Superiores Acatlán – UNAM
 
 
