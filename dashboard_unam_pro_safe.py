@@ -11,13 +11,16 @@ import warnings
 
 import plotly.express as px
 import plotly.graph_objects as go
-
+from pathlib import Path
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
+DATA_DIR = BASE_DIR / "data"
 
 # =========================
 # CONFIGURACIÓN INICIAL
@@ -86,9 +89,8 @@ mode = st.radio(
 # Función para cargar datos de demostración (si no se suben archivos)
 # =============================
 
-def load_demo_data(data_folder="data"):
-    data_path = Path(data_folder)
-    demo_files = list(data_path.glob("*.csv"))
+def load_demo_data():
+    demo_files = list(DATA_DIR.glob("*.csv"))
     return demo_files
 
 warnings.filterwarnings("ignore")
