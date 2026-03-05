@@ -6,30 +6,28 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import re
-import math
-import warnings
-
 import plotly.express as px
 import plotly.graph_objects as go
-from pathlib import Path
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from pathlib import Path
+import warnings
+# =============================
+
+st.set_page_config(
+    page_title="Sistema de Análisis Psicométrico y Estructural de Evaluación Docente - FESAc-UNAM",
+    layout="wide"
+)
+warnings.filterwarnings("ignore")
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 
 # =========================
-# CONFIGURACIÓN INICIAL
-# =========================
-
-st.set_page_config(page_title="SAPEED", layout="wide")
-
-# =========================
-# AUTENTICACIÓN
+# CONFIGURACIÓN INICIAL. AUTENTICACIÓN y CONFIGURACIÓN INSTITUCIONAL UNAM
 # =========================
 
 def check_password():
@@ -75,52 +73,24 @@ if st.button("Cerrar sesión"):
         del st.session_state[key]
     st.rerun()
 
-
-# =============================
-# Use demo data if no files uploaded
 # =============================
 
 mode = st.radio(
-    "Mode de datos",
+    "Modo de datos",
     ["Datos demostrativos", "Suba sus archivos CSV"]
 )
 
 # =============================
-# Función para cargar datos de demostración (si no se suben archivos)
-# =============================
 
 def load_demo_data():
     demo_files = list(DATA_DIR.glob("*.csv"))
-    return demo_files
 
-warnings.filterwarnings("ignore")
-
-
-####
-if mode == "Datos demostrativos":
-    demo_files = load_demo_data("data")
-    uploaded_files = demo_files
-else:
-    uploaded_files = st.file_uploader(
-        "Upload professorIDXXXXXX.csv files",
-        type=["csv"],
-        accept_multiple_files=True
-    )
-    if not uploaded_files:
-        st.warning("Suba al menos un archivo CSV.")
+    if not demo_files:
+        st.error("No demo data found in the data/ folder.")
         st.stop()
 
-####
+    return demo_files
 
-
-# =============================
-# CONFIGURACIÓN INSTITUCIONAL UNAM
-# =============================
-
-st.set_page_config(
-    page_title="Sistema de Análisis Psicométrico y Estructural de Evaluación Docente - FESAc-UNAM",
-    layout="wide"
-)
 
 UNAM_BLUE = "#003366"
 UNAM_GOLD = "#C9A227"
@@ -158,21 +128,31 @@ st.markdown(
 
 st.header("📂 Carga de archivos por profesor (Respuestas a nivel estudiante)")
 
-uploaded_files = st.file_uploader(
-    "Sube archivos tipo profesorIDXXXXXX.csv",
-    type=["csv"],
-    accept_multiple_files=True
-)
 
-# if not uploaded_files:
-#     st.stop()
 
-if not uploaded_files:
-    st.info("No files uploaded. Loading synthetic demo data.")
-    demo_files = load_demo_data("data")
-    uploaded_files = demo_files
+
+if mode == "Suba sus archivos CSV":
+
+    uploaded_files = st.file_uploader(
+        "Sube archivos tipo profesorIDXXXXXX.csv",
+        type=["csv"],
+        accept_multiple_files=True
+    )
+
+    if not uploaded_files:
+        st.warning("Suba al menos un archivo CSV.")
+        st.stop()
+
+    st.success("Archivos cargados correctamente.")
+
 else:
-    st.success("Using uploaded files.")
+
+    st.info("Usando datos demostrativos.")
+    uploaded_files = load_demo_data()
+
+
+
+
 
 
 ITEM_RE = re.compile(r"^D(\d+)Q(\d+)$")
@@ -188,11 +168,14 @@ for file in uploaded_files:
     filename = file.name
     prof_id = filename.replace(".csv", "")
 
-    df = pd.read_csv(file)
+    try:
+        df = pd.read_csv(file)
+    except Exception as e:
+        st.warning(f"No se pudo leer {filename}")
+        continue
 
-    # -------------------------
     # Detectar columnas tipo DkQj
-    # -------------------------
+
     item_cols = []
     dim_item_map = {}
 
@@ -216,9 +199,7 @@ for file in uploaded_files:
             key=lambda x: int(ITEM_RE.match(x).group(2))
         )
 
-    # -------------------------
     # Verificar estructura consistente del instrumento
-    # -------------------------
     current_item_structure = {
         dim: tuple(dim_item_map[dim]) for dim in dimension_cols
     }
@@ -235,20 +216,15 @@ for file in uploaded_files:
             st.error(f"Estructura de ítems inconsistente en {filename}")
             st.stop()
 
-    # -------------------------
     # Convertir ítems a numérico
-    # -------------------------
+
     df[item_cols] = df[item_cols].apply(pd.to_numeric, errors="coerce")
 
-    # -------------------------
     # Construcción de puntajes por dimensión (nivel estudiante)
-    # -------------------------
     for dim in dimension_cols:
         df[dim] = df[dim_item_map[dim]].mean(axis=1)
 
-    # -------------------------
     # Resumen por profesor (solo visualización)
-    # -------------------------
     prof_means = df[dimension_cols].mean().to_dict()
     prof_means["ProfesorID"] = prof_id
     prof_means["N_estudiantes"] = len(df)
@@ -259,16 +235,12 @@ for file in uploaded_files:
     df["ProfesorID"] = prof_id
     all_professor_data.append(df)
 
-# ---------------------------------
 # Verificar que haya al menos un archivo válido
-# ---------------------------------
 if not all_professor_data:
     st.error("No se cargaron archivos válidos de profesores.")
     st.stop()
 
-# ---------------------------------
 # Consolidación institucional (nivel estudiante)
-# ---------------------------------
 institutional_df = pd.concat(all_professor_data, ignore_index=True)
 professor_means_df = pd.DataFrame(professor_dimension_means)
 
@@ -625,9 +597,8 @@ for dim in reference_dim_structure:
     inst_alpha = cronbach_alpha(institutional_df[item_cols])
 
     # α del profesor seleccionado
-    df_prof = institutional_df[
-        institutional_df["ProfesorID"] == selected_professor
-    ]
+    df_prof =  df_selected
+    #institutional_df[institutional_df["ProfesorID"] == selected_professor]
 
     prof_alpha = cronbach_alpha(df_prof[item_cols])
 
@@ -666,8 +637,6 @@ Guía general de interpretación de α de Cronbach:
 
 st.header("📈 Análisis de Correlaciones")
 
-dimension_cols = reference_dim_structure
-
 #--------------------------------------------
 # PASO 1 — Institucional (Nivel Estudiante, combinado)
 #--------------------------------------------
@@ -686,11 +655,6 @@ fig_student = px.imshow(
     aspect="auto",
 )
 
-# fig_student.update_layout(
-#     coloraxis_colorbar=dict(title="r"),
-#     paper_bgcolor="white",
-#     plot_bgcolor="white"
-# )
 
 fig_student.update_layout(
     template="plotly_white",
@@ -788,9 +752,6 @@ else:
 
 st.subheader("🔍 Correlación dentro del Profesor Seleccionado")
 
-df_selected = institutional_df[
-    institutional_df["ProfesorID"] == selected_professor
-]
 
 n_students_selected = len(df_selected)
 
@@ -850,7 +811,6 @@ else:
 
 st.header("🧠 Regresión Ridge + Validación Cruzada (Red de Dimensiones)")
 
-dimension_cols = reference_dim_structure  # ya definido en CAPA 1/2/4
 
 # -----------------------------
 # Seleccionar dimensión objetivo
