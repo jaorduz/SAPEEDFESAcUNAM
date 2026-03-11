@@ -2,6 +2,8 @@
 # CAPA 0: Librerías, constantes y configuración institucional UNAM
 #############################################
 
+from copy import Error
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -15,6 +17,8 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from pathlib import Path
 import warnings
+from translations import TEXT
+
 # =============================
 
 st.set_page_config(
@@ -25,6 +29,15 @@ warnings.filterwarnings("ignore")
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
+
+#============================
+# Selección de idioma (para futuras traducciones)
+#============================
+language = st.sidebar.selectbox(
+    "Language / Idioma",
+    ["Español", "English"]
+)
+
 
 # =========================
 # CONFIGURACIÓN INICIAL. AUTENTICACIÓN y CONFIGURACIÓN INSTITUCIONAL UNAM
@@ -112,23 +125,23 @@ h1, h2, h3 {{
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 SAPEED - FESAc-UNAM")
-st.subheader("Plataforma exploratoria estructural y psicométrica para monitoreo institucional.")
-st.markdown(
-    "Carga archivos por profesor con respuestas estudiantiles a nivel ítem "
-    "para calcular confiabilidad, promedios institucionales y relaciones estructurales entre dimensiones."
-)
+
+st.title(TEXT["app_title"][language])
+# st.title(t("app_title"))
+st.subheader(TEXT["app_subtitle"][language])
+st.markdown(TEXT["app_description"][language])
 
 
+def t(key):
+    return TEXT[key][language]
 
 #############################################
 # CAPA 1: Carga múltiple de archivos y procesamiento
 # Nivel estudiante
 #############################################
 
-st.header("📂 Carga de archivos por profesor (Respuestas a nivel estudiante)")
 
-
+st.header(t("upload_header"))
 
 
 if mode == "Suba sus archivos CSV":
@@ -149,9 +162,6 @@ else:
 
     st.info("Usando datos demostrativos.")
     uploaded_files = load_demo_data()
-
-
-
 
 
 
@@ -256,12 +266,14 @@ st.write("Dimensiones detectadas:", dimension_cols)
 # (Gráfica de Barras + Radar + Benchmark Institucional)
 #############################################
 
-st.header("👤 Comparación de Profesor")
+
+st.header(t("professor_selection_header"))
 
 selected_professor = st.selectbox(
-    "Seleccionar Profesor",
+    t("select_professor"),
     sorted(professor_means_df["ProfesorID"].unique())
 )
+
 
 # Datos a nivel estudiante del profesor seleccionado
 df_selected = institutional_df[
@@ -272,7 +284,8 @@ df_selected = institutional_df[
 # Promedio Institucional (ponderado a nivel estudiante)
 # -------------------------------------------
 
-st.header("🏛 Promedio Institucional (ponderado por estudiante)")
+
+st.header(t("Institutional_Average_Header"))
 
 institutional_average = institutional_df[dimension_cols].mean()
 st.write(institutional_average)
@@ -281,7 +294,9 @@ st.write(institutional_average)
 # Panel de Desempeño del Profesor
 # -------------------------------------------
 
-st.header("📊 Resumen de Desempeño del Profesor")
+st.header(t("Professor_Summary_Header"))
+
+
 
 # -------------------------------------------
 # Función auxiliar: Media + Intervalo de Confianza
@@ -350,7 +365,7 @@ col1, col2 = st.columns(2)
 # -------------------------------------------
 with col1:
 
-    st.subheader("📊 Comparación en Barras")
+    st.subheader(t("Bar_Comparison_Subheader"))
 
     fig_bar = go.Figure()
 
@@ -364,7 +379,7 @@ with col1:
     fig_bar.add_trace(go.Bar(
         x=df_compare["Dimensión"],
         y=df_compare["Media Institucional"],
-        name="Media Institucional",
+        name=t("Institutional_Average_text"),
         marker_color=UNAM_GOLD
     ))
 
@@ -386,9 +401,9 @@ with col1:
     ))
 
     fig_bar.update_layout(
-        barmode="group",
         paper_bgcolor="white",
         plot_bgcolor="white",
+        barmode="group",
         font=dict(color="black"),  # Texto general negro
         xaxis=dict(
             title_font=dict(color="black"),
@@ -410,7 +425,7 @@ with col1:
 # -------------------------------------------
 with col2:
 
-    st.subheader("🕸 Comparación Radar")
+    st.subheader(t("Radar_Comparison_Subheader"))
 
     theta = dimension_cols + [dimension_cols[0]]
 
@@ -421,7 +436,7 @@ with col2:
 
     fig_radar = go.Figure()
 
-    # Banda IC institucional
+    # Upper CI boundary
     fig_radar.add_trace(go.Scatterpolar(
         r=upper_closed,
         theta=theta,
@@ -430,63 +445,123 @@ with col2:
         showlegend=False
     ))
 
+    # Institutional confidence band
     fig_radar.add_trace(go.Scatterpolar(
         r=lower_closed,
         theta=theta,
         fill="tonext",
-        fillcolor="rgba(201,162,39,0.2)",
+        fillcolor="rgba(201,162,39,0.15)",
         line=dict(width=0),
-        name="IC 95% Institucional"
+        name=t("Institutional_IC_95")
     ))
 
-    # Media institucional
+    # Institutional mean
     fig_radar.add_trace(go.Scatterpolar(
         r=inst_closed,
         theta=theta,
         fill="toself",
-        name="Media Institucional",
-        line=dict(color=UNAM_GOLD)
+        fillcolor="rgba(201,162,39,0.10)",
+        name=t("Institutional_Average_text"),
+        line=dict(color=UNAM_GOLD, width=2.5)
     ))
 
-    # Profesor seleccionado
+    # Selected professor
     fig_radar.add_trace(go.Scatterpolar(
         r=prof_closed,
         theta=theta,
         fill="toself",
+        fillcolor="rgba(0,51,102,0.12)",
         name=selected_professor,
-        line=dict(color=UNAM_BLUE)
+        line=dict(color=UNAM_BLUE, width=3)
     ))
 
     fig_radar.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[1,5])),
+
+        template=None,  # disable inherited templates
+
+        polar=dict(
+
+            bgcolor="white",
+
+            radialaxis=dict(
+                visible=True,
+                range=[1,5],
+
+                showline=True,
+                linewidth=2,
+                linecolor="black",
+
+                showgrid=True,
+                gridcolor="black",
+                gridwidth=1,
+
+                tickmode="array",
+                tickvals=[1,2,3,4,5],
+                ticktext=["1","2","3","4","5"],
+
+                ticks="outside",
+                ticklen=6,
+                tickcolor="black",
+
+                tickfont=dict(
+                    color="black",
+                    size=14
+                )
+            ),
+
+            angularaxis=dict(
+                showline=True,
+                linewidth=2,
+                linecolor="black",
+
+                showgrid=True,
+                gridcolor="black",
+                gridwidth=1,
+
+                tickfont=dict(
+                    color="black",
+                    size=14
+                ),
+
+                rotation=90,
+                direction="clockwise"
+            )
+        ),
+
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+
+        font=dict(
+            color="black",
+            size=14
+        ),
+
+        legend=dict(
+            font=dict(color="black", size=12),
+            bgcolor="rgba(0,0,0,0)"
+        ),
+
         showlegend=True
     )
 
-    st.caption(
-        "La gráfica radar compara las medias del profesor seleccionado "
-        "contra la media institucional. El área sombreada representa "
-        "el intervalo de confianza del 95% institucional."
-    )
+    st.caption(t("radar_comparison_caption"))
 
     st.plotly_chart(fig_radar, width="stretch")
 
 # -------------------------------------------
 # Tabla de interpretación
 # -------------------------------------------
-st.subheader("📋 Interpretación por Dimensión")
+
+
+st.subheader(t("Institutional_Dimension_Subheader"))
 
 st.dataframe(
     df_compare[["Dimensión","Media Profesor","Media Institucional","Clasificación"]],
     width="stretch"
 )
 
-st.caption("""
-Criterios de clasificación:
-• Superior → la media del profesor supera el IC 95% institucional  
-• Inferior → la media del profesor está por debajo del IC 95% institucional  
-• Dentro del rango → sin diferencia estadísticamente relevante  
-""")
 
+st.caption(t("radar_comparison_caption"))
 
 
 
@@ -497,7 +572,7 @@ Criterios de clasificación:
 # (Cronbach α, α Estratificada, por Profesor)
 #############################################
 
-st.header("🔬 Análisis de Confiabilidad")
+st.header(t("Reliability_Header"))
 
 # =====================================================
 # FUNCIONES
@@ -539,7 +614,7 @@ def stratified_alpha(data, item_structure):
         sub_info.append({
             "Dimensión": dim,
             "Alpha": alpha_dim,
-            "Varianza": S.var(ddof=1)
+            "Variance_text": S.var(ddof=1)
         })
 
     if not sub_info:
@@ -554,7 +629,7 @@ def stratified_alpha(data, item_structure):
     T = S_mat.sum(axis=1)
     var_T = T.var(ddof=1)
 
-    numerator = (sub_df["Varianza"] * (1 - sub_df["Alpha"])).sum()
+    numerator = (sub_df["Variance_text"] * (1 - sub_df["Alpha"])).sum()
 
     if var_T == 0 or np.isnan(var_T):
         return np.nan
@@ -574,12 +649,12 @@ inst_alpha_strat = stratified_alpha(
 )
 
 col1.metric(
-    "α Estratificada Institucional",
+    "alpha_Stratified_metric",
     f"{inst_alpha_strat:.3f}" if not np.isnan(inst_alpha_strat) else "NA"
 )
 
 col2.metric(
-    "Total de respuestas estudiantiles",
+    "student_responses_metric",
     f"{len(institutional_df)}"
 )
 
@@ -612,36 +687,31 @@ rel_df = pd.DataFrame(
     results,
     columns=[
         "Dimensión",
-        "α Institucional",
+        "alpha_Institutional",
         f"α {selected_professor}"
     ]
 )
 
-st.subheader("Confiabilidad por Dimensión")
+
+
+st.caption(t("Dimension_Reliability_Subheader"))
 
 st.dataframe(rel_df, width="stretch")
 
-st.caption("""
-Guía general de interpretación de α de Cronbach:
-
-• < 0.60 → Baja consistencia interna  
-• 0.70 → Aceptable  
-• 0.80 → Buena  
-• 0.90+ → Muy alta (posible redundancia de ítems)
-""")
+st.caption(t("Cronbach_Interpretation_Caption"))
 
 
 #############################################
 # CAPA 4: Análisis de Correlaciones (Limpio y robusto)
 #############################################
 
-st.header("📈 Análisis de Correlaciones")
+st.header(t("Corr_Analysis_Header"))
 
 #--------------------------------------------
 # PASO 1 — Institucional (Nivel Estudiante, combinado)
 #--------------------------------------------
 
-st.subheader("🏛 Correlación Institucional (nivel estudiante, combinado)")
+st.subheader(t("Inst_Corre_Stud_Combi"))
 
 n_students_total = len(institutional_df)
 
@@ -684,19 +754,13 @@ st.plotly_chart(fig_student, width="stretch")
 
 st.caption(f"Total de respuestas estudiantiles combinadas: N = {n_students_total}")
 
-st.markdown("""
-**Interpretación (nivel estudiante combinado):**
-- Mide cómo co-varían las dimensiones considerando a **todos** los estudiantes.
-- r alta → estudiantes que califican alto en una dimensión tienden a calificar alto en otra.
-- r cercana a 0 → dimensiones relativamente independientes.
-- r negativa → patrón inverso en la percepción estudiantil.
-""")
+st.markdown(t("Interpreted_r_Student_Level_Description"))
 
 #--------------------------------------------
 # PASO 2 — Correlación a nivel Profesor (Nivel ecológico)
 #--------------------------------------------
 
-st.subheader("👨‍🏫 Correlación entre Profesores (nivel ecológico)")
+st.subheader(t("Ecol_level_Correlacion"))
 
 if len(professor_means_df) > 1:
 
@@ -736,21 +800,19 @@ if len(professor_means_df) > 1:
 
     st.caption(f"Número de profesores: {len(professor_means_df)}")
 
-    st.markdown("""
-    **Interpretación (nivel profesor / ecológico):**
-    - Mide la asociación entre **promedios por profesor**.
-    - Representa un patrón de nivel superior (institucional/estructural).
-    - Las correlaciones ecológicas pueden diferir de las correlaciones a nivel estudiante.
-    """)
+    st.markdown(t("Ecological_Interpretation_Note"))
+
 
 else:
-    st.info("Se requieren al menos 2 profesores para calcular correlación a nivel profesor.")
+    st.info(t("minimum_professors_for_correlation"))
 
 #--------------------------------------------
 # PASO 3 — Correlación dentro del Profesor Seleccionado (Nivel estudiante)
 #--------------------------------------------
 
-st.subheader("🔍 Correlación dentro del Profesor Seleccionado")
+st.subheader(t("Selected_Professor_Correlation_Subheader"))
+
+
 
 
 n_students_selected = len(df_selected)
@@ -768,9 +830,9 @@ if n_students_selected > 5:
     )
 
     fig_sel.update_layout(
-        template="plotly_white",
         paper_bgcolor="white",
-        plot_bgcolor="white",
+        plot_bgcolor="white",        
+        template="plotly_white",
         font=dict(color="black"),
         coloraxis_colorbar=dict(
             title=dict(text="r", font=dict(color="black")),
@@ -801,15 +863,12 @@ else:
     )
 
 
-
-
-
 #############################################
 # CAPA 5: Regresión Ridge (Objetivo seleccionable)
 # Modelado estructural entre dimensiones (nivel estudiante combinado)
 #############################################
 
-st.header("🧠 Regresión Ridge + Validación Cruzada (Red de Dimensiones)")
+st.header(t("Regresion_Ridge_Description"))
 
 
 # -----------------------------
@@ -829,7 +888,8 @@ n_model = len(df_model)
 st.caption(f"Filas usadas a nivel estudiante (después de eliminar NA): N = {n_model}")
 
 if n_model < 20:
-    st.warning("⚠️ Tamaño de muestra bajo puede producir estimaciones inestables (recomendado N ≥ 30).")
+    st.warning(t("Sample_Size_Warning"))
+
 
 X = df_model[predictors]
 y = df_model[target_dim]
@@ -837,7 +897,8 @@ y = df_model[target_dim]
 # -----------------------------
 # Parámetros de Validación Cruzada
 # -----------------------------
-k_folds = st.slider("Pliegues de validación cruzada (K)", 3, 10, 5)
+k_folds = st.slider(t("K_Values_Slider"), 3, 10, 5)
+
 
 if n_model <= k_folds:
     st.error(f"No hay suficientes observaciones (N={n_model}) para K={k_folds} pliegues.")
@@ -904,12 +965,12 @@ col1, col2 = st.columns(2)
 col1.metric("Mejor λ* (regularización Ridge)", f"{best_lambda:.6f}")
 col2.metric("MSE_CV(λ*)", f"{best_mse:.4f}")
 
-st.caption(
-    "Interpretación: λ* controla la contracción (fuerza de regularización). "
-    "MSE_CV(λ*) estima el error de predicción fuera de muestra (menor es mejor)."
-)
+st.caption(t("Interpretation_Lambda_caption"))
+
 
 st.subheader("Coeficientes (β) en λ*")
+
+
 st.dataframe(
     beta.sort_values(ascending=False).to_frame("β"),
     width="stretch"
@@ -924,34 +985,52 @@ fig_lambda.add_trace(go.Scatter(
     x=lambda_grid,
     y=mse_mean,
     mode="lines+markers",
-    name="MSE promedio (CV)"
-))
+    name=(t("CV_Aver_MSE"))
+)
+)
+
 
 fig_lambda.add_trace(go.Scatter(
     x=lambda_grid,
     y=(np.array(mse_mean) + np.array(mse_std)),
     mode="lines",
-    name="+1 desv. estándar",
+    name=(t("sigma_1_CV_MSE")),
     line=dict(dash="dot")
 ))
+
 
 fig_lambda.add_trace(go.Scatter(
     x=lambda_grid,
     y=(np.array(mse_mean) - np.array(mse_std)),
     mode="lines",
-    name="-1 desv. estándar",
+    name=(t("sigma_1n_CV_MSE")),    
     line=dict(dash="dot")
 ))
 
+
+
+
 fig_lambda.update_layout(
-    xaxis_type="log",
-    title="Curva de Regularización (λ vs Error CV)",
-    xaxis_title="λ (escala log)",
-    yaxis_title="Error cuadrático medio (CV)",
     paper_bgcolor="white",
     plot_bgcolor="white",
+    xaxis_type="log",
+    title=(t("RegVsLambda_Title")),
+    xaxis_title=(t("Lambda_Esc_Log_Title")),
+    yaxis_title=(t("Erro_Cuad_Avg_CV")),
     font=dict(color=UNAM_BLUE),
-    legend=dict(font=dict(color=UNAM_BLUE), bgcolor="white")
+    legend=dict(font=dict(color=UNAM_BLUE), bgcolor="white"),
+    coloraxis_colorbar=dict(
+        title=dict(text="Curvas", font=dict(color="black")),
+        tickfont=dict(color="black")
+    ),
+    xaxis=dict(
+        title=dict(font=dict(color="black")),
+        tickfont=dict(color="black")
+    ),
+    yaxis=dict(
+        title=dict(font=dict(color="black")),
+        tickfont=dict(color="black")
+    )
 )
 
 st.plotly_chart(fig_lambda, width="stretch")
@@ -959,7 +1038,9 @@ st.plotly_chart(fig_lambda, width="stretch")
 # -----------------------------
 # Trayectorias de estabilidad de coeficientes vs λ
 # -----------------------------
-st.subheader("Trayectorias de estabilidad (β vs λ)")
+
+st.markdown(t("BetaVsAlpha_Subheader"))
+
 
 fig_path = go.Figure()
 
@@ -973,15 +1054,28 @@ for j, pred_name in enumerate(predictors):
         name=f"β({pred_name})"
     ))
 
+
 fig_path.update_layout(
-    xaxis_type="log",
-    title="Estabilidad de coeficientes a través de λ",
-    xaxis_title="λ (escala log)",
-    yaxis_title="β promedio (entre pliegues)",
     paper_bgcolor="white",
-    plot_bgcolor="white",
+    plot_bgcolor="white",    
+    xaxis_type="log",
+    title=(t("FP_UL_text_Title")),
+    xaxis_title=(t("Lambda_XAxis_Title")),
+    yaxis_title=(t("Beta_YAxis_Title")),
     font=dict(color=UNAM_BLUE),
-    legend=dict(font=dict(color=UNAM_BLUE), bgcolor="white")
+    legend=dict(font=dict(color=UNAM_BLUE), bgcolor="white"),
+    coloraxis_colorbar=dict(
+        title=dict(text="predictors_Text", font=dict(color="black")),
+        tickfont=dict(color="black")
+    ),
+    xaxis=dict(
+        title=dict(font=dict(color="black")),
+        tickfont=dict(color="black")
+    ),
+    yaxis=dict(
+        title=dict(font=dict(color="black")),
+        tickfont=dict(color="black")
+    )
 )
 
 st.plotly_chart(fig_path, width="stretch")
@@ -989,17 +1083,5 @@ st.plotly_chart(fig_path, width="stretch")
 # -----------------------------
 # Aclaración α vs λ (evitar confusión)
 # -----------------------------
-with st.expander("ℹ️ Aclaración de parámetros: α psicométrica vs λ de Ridge"):
-    st.markdown("""
-**α psicométrica (Cronbach / α estratificada)**  
-- Mide la confiabilidad del instrumento (consistencia interna).  
-- Se calcula a partir de la estructura de covarianzas entre ítems.
-
-**λ de Ridge (fuerza de regularización)**  
-- Hiperparámetro que controla la contracción de coeficientes en regresión Ridge.  
-- En scikit-learn se llama `alpha`, pero matemáticamente corresponde a λ.
-
-**En este dashboard:**  
-- α → confiabilidad (calidad del instrumento)  
-- λ → regularización del modelo (modelado predictivo/estructural)
-""")
+with st.expander(t("Alpha_PsiVsLambdaRidge")):
+    st.markdown(t("expander_Text"))
